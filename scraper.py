@@ -27,7 +27,7 @@ def dump_urls(mountain_urls, urls_filename):
     full_path = os.path.join(os.getcwd(), urls_filename)
 
     with open(full_path, 'wb') as file:
-        pickle.dump(urls_filename, file)
+        pickle.dump(mountain_urls, file)
 
 
 def get_urls_by_elevation(url):
@@ -45,10 +45,10 @@ def get_urls_by_elevation(url):
     return [urljoin(base_url, item['href']) for item in elevation_items]
 
 
-def get_mountains_urls(urls_filename = 'mountains_urls.csv'):
+def get_mountains_urls(urls_filename = 'mountains_urls.pickle', url = 'https://www.mountain-forecast.com/countries/United-States?top100=yes'):
     """ Returs dictionary of mountain urls
     
-    If a file with urls doesn't exists then create a new one and return
+    If a file with urls doesn't exists then create a new one using "url" and return it
     """
 
     try:
@@ -56,9 +56,9 @@ def get_mountains_urls(urls_filename = 'mountains_urls.csv'):
 
     except FileNotFoundError:  # Is this better than checking if the file exists?
 
-        directory = 'https://www.mountain-forecast.com/countries/United-States?top100=yes'
+        directory_url = url
 
-        page = requests.get(directory)
+        page = requests.get(directory_url)
         soup = bs(page.content, 'html.parser')
 
         mountain_items = soup.find('ul', attrs={'class':'b-list-table'}).find_all('li')
@@ -86,7 +86,7 @@ def save_data(rows):
     column_names = ['Mountain', 'Date', 'Elevation', 'Time', 'Wind', 'Summary', 'Rain', 'Snow', 'Max Temperature', 'Min Temperature', 'Chill', 'Freezing Level', 'Sunrise', 'Sunset']
 
     today = datetime.date.today()
-    dataset_name = '~/Documents/Data Science/Scrape Mountain Forecast/mountain_weather_forecasts_dataset_{}_{}.csv'.format(today.month, today.year)
+    dataset_name = os.path.join(os.getcwd(), 'mountain_weather_forecasts_dataset_{}_{}.csv'.format(today.month, today.year))
 
     try:
         new_df = pd.DataFrame(rows, columns=column_names)
@@ -169,13 +169,22 @@ def scrape(mountains_urls):
 def scrape_forecasts():
     """ Call the different functions necessary to scrape mountain weather forecasts and save the data """
 
-    mountains_urls = get_mountains_urls('100_mountains_urls.csv')
+    start = time.time()
+    print('Getting Mountain URLS')
+    #mountains_urls = get_mountains_urls(urls_filename = '100_mountains_urls.pickle', url = 'https://www.mountain-forecast.com/countries/United-States')
+    mountains_urls = get_mountains_urls(urls_filename = '100_mountains_urls.pickle')
+    print('URLs for {} Mountains collected\n'.format(len(mountains_urls)))
+
+    print('Scraping forecasts...\n')
     forecasts = scrape(mountains_urls)
+
+    print('Saving forecasts...\n')
     save_data(forecasts)
-    
+
+    print('All done! The process took {} seconds\n'.format(round(time.time() - start, 2)))
+
 
 if __name__ == '__main__':
 
-    start = time.time()
     scrape_forecasts()
-    print(time.time() - start)
+    

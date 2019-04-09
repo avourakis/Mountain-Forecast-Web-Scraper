@@ -8,21 +8,26 @@ from urllib.parse import urljoin
 from collections import defaultdict
 import time
 import pickle
+import os
 
 
-def load_urls():
+def load_urls(urls_filename):
     """ Returns dictionary of mountain urls saved a pickle file """
+    
+    full_path = os.path.join(os.getcwd(), urls_filename)
 
-    with open('/Users/andres/Documents/Data Science/Scrape Mountain Forecast/mountain_10_urls.pickle', 'rb') as file:
+    with open(full_path, 'rb') as file:
         urls = pickle.load(file)
     return urls
 
 
-def dump_urls(urls):
+def dump_urls(mountain_urls, urls_filename):
     """ Saves dictionary of mountain urls as a pickle file """
 
-    with open('/Users/andres/Documents/Data Science/Scrape Mountain Forecast/mountain_10_urls.pickle', 'wb') as file:
-        pickle.dump(urls, file)
+    full_path = os.path.join(os.getcwd(), urls_filename)
+
+    with open(full_path, 'wb') as file:
+        pickle.dump(urls_filename, file)
 
 
 def get_urls_by_elevation(url):
@@ -40,18 +45,29 @@ def get_urls_by_elevation(url):
     return [urljoin(base_url, item['href']) for item in elevation_items]
 
 
-def get_mountain_urls():
-    """  """
+def get_mountains_urls(urls_filename = 'mountains_urls.csv'):
+    """ Returs dictionary of mountain urls
+    
+    If a file with urls doesn't exists then create a new one and return
+    """
 
-    directory = 'https://www.mountain-forecast.com/countries/United-States?top100=yes'
+    try:
+        mountain_urls = load_urls(urls_filename)
 
-    page = requests.get(directory)
-    soup = bs(page.content, 'html.parser')
+    except FileNotFoundError:  # Is this better than checking if the file exists?
 
-    mountain_items = soup.find('ul', attrs={'class':'b-list-table'}).find_all('li')
-    mountain_urls = {item.find('a').get_text() : get_urls_by_elevation(item.find('a')['href']) for item in mountain_items}
- 
-    dump_urls(mountain_urls)
+        directory = 'https://www.mountain-forecast.com/countries/United-States?top100=yes'
+
+        page = requests.get(directory)
+        soup = bs(page.content, 'html.parser')
+
+        mountain_items = soup.find('ul', attrs={'class':'b-list-table'}).find_all('li')
+        mountain_urls = {item.find('a').get_text() : get_urls_by_elevation(item.find('a')['href']) for item in mountain_items}
+    
+        dump_urls(mountain_urls, urls_filename)
+
+    finally:
+        return mountain_urls
 
 
 def clean(text):
@@ -60,22 +76,24 @@ def clean(text):
     return re.sub('\s+', ' ', text).strip()  # Is there a way to use only REGEX?
 
 
-def save_data(rows, columns):
+def save_data(rows):
     """ Saves the collected forecasts into a CSV file
     
     If the file already exists then it updates the old forecasts
     as necessary and/or appends new ones.
     """
 
+    column_names = ['Mountain', 'Date', 'Elevation', 'Time', 'Wind', 'Summary', 'Rain', 'Snow', 'Max Temperature', 'Min Temperature', 'Chill', 'Freezing Level', 'Sunrise', 'Sunset']
+
     today = datetime.date.today()
     dataset_name = '~/Documents/Data Science/Scrape Mountain Forecast/mountain_weather_forecasts_dataset_{}_{}.csv'.format(today.month, today.year)
 
     try:
-        new_df = pd.DataFrame(rows, columns=columns)
+        new_df = pd.DataFrame(rows, columns=column_names)
         old_df = pd.read_csv(dataset_name, dtype=object)
 
-        new_df.set_index(columns[:4], inplace=True)
-        old_df.set_index(columns[:4], inplace=True)
+        new_df.set_index(column_names[:4], inplace=True)
+        old_df.set_index(column_names[:4], inplace=True)
 
         old_df.update(new_df)
         only_include = ~old_df.index.isin(new_df.index)
@@ -86,15 +104,12 @@ def save_data(rows, columns):
         new_df.to_csv(dataset_name, index=False)
 
 
-def scrape_forecasts():
-    """ """
+def scrape(mountains_urls):
+    """ Does the dirty work of scraping the forecasts for each mountain"""
 
-    column_names = ['Mountain', 'Date', 'Elevation', 'Time', 'Wind', 'Summary', 'Rain', 'Snow', 'Max Temperature', 'Min Temperature', 'Chill', 'Freezing Level', 'Sunrise', 'Sunset']
-
-    mountain_urls = load_urls()
     rows = []
 
-    for mountain_name, urls in mountain_urls.items():
+    for mountain_name, urls in mountains_urls.items():
 
         for url in urls:
 
@@ -148,8 +163,16 @@ def scrape_forecasts():
 
             time.sleep(1)  # Delay to not bombard the website with requests
 
-    save_data(rows, column_names)
+    return rows
 
+
+def scrape_forecasts():
+    """ Call the different functions necessary to scrape mountain weather forecasts and save the data """
+
+    mountains_urls = get_mountains_urls('100_mountains_urls.csv')
+    forecasts = scrape(mountains_urls)
+    save_data(forecasts)
+    
 
 if __name__ == '__main__':
 

@@ -54,7 +54,7 @@ def get_mountains_urls(urls_filename = 'mountains_urls.pickle', url = 'https://w
     try:
         mountain_urls = load_urls(urls_filename)
 
-    except FileNotFoundError:  # Is this better than checking if the file exists?
+    except:  # Is this better than checking if the file exists? Should I catch specific errors?
 
         directory_url = url
 
@@ -83,10 +83,10 @@ def save_data(rows):
     as necessary and/or appends new ones.
     """
 
-    column_names = ['Mountain', 'Date', 'Elevation', 'Time', 'Wind', 'Summary', 'Rain', 'Snow', 'Max Temperature', 'Min Temperature', 'Chill', 'Freezing Level', 'Sunrise', 'Sunset']
+    column_names = ['mountain', 'date', 'elevation', 'time', 'wind', 'summary', 'rain', 'snow', 'max_temperature', 'min_temperature', 'chill', 'freezing_level', 'sunrise', 'sunset']
 
     today = datetime.date.today()
-    dataset_name = os.path.join(os.getcwd(), 'mountain_weather_forecasts_dataset_{}_{}.csv'.format(today.month, today.year))
+    dataset_name = os.path.join(os.getcwd(), '{:02d}{}_mountain_forecasts.csv'.format(today.month, today.year))  # i.e. 042019_mountain_forecasts.csv
 
     try:
         new_df = pd.DataFrame(rows, columns=column_names)
@@ -118,7 +118,7 @@ def scrape(mountains_urls):
             soup = bs(page.content, 'html.parser')
 
             # Get data from header
-            forecast_table = soup.find('table', attrs={'class': 'forecast__table forecast__table--js'})
+            forecast_table = soup.find('table', attrs={'class': 'forecast__table forecast__table--js'})  # Default unit is metric
             days = forecast_table.find('tr', attrs={'data-row': 'days'}).find_all('td')
 
             # Get rows from body
@@ -170,8 +170,8 @@ def scrape_forecasts():
     """ Call the different functions necessary to scrape mountain weather forecasts and save the data """
 
     start = time.time()
-    print('Getting Mountain URLS')
-    #mountains_urls = get_mountains_urls(urls_filename = '100_mountains_urls.pickle', url = 'https://www.mountain-forecast.com/countries/United-States')
+    print('\nGetting Mountain URLS')
+    #mountains_urls = get_mountains_urls(urls_filename = '10_mountains_urls.pickle', url = 'https://www.mountain-forecast.com/countries/United-States')
     mountains_urls = get_mountains_urls(urls_filename = '100_mountains_urls.pickle')
     print('URLs for {} Mountains collected\n'.format(len(mountains_urls)))
 

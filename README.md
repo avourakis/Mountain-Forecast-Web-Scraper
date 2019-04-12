@@ -2,6 +2,8 @@
 
 A web scraper for https://www.mountain-forecast.com to collect weather forecasts for the highest 100 mountains in the United States.
 
+For more information check out this article where I walk you through how I approached this project and used a Raspberry Pi to handle all of the daily data collection: https://towardsdatascience.com/web-scraping-mountain-weather-forecasts-using-python-and-a-raspberry-pi-2716d0dccf93
+
 ## What does the data look like?
 <img src="/images/dataset_preview.png" alt="dataset preview">
 

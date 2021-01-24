@@ -171,7 +171,7 @@ def scrape_forecasts():
 
     start = time.time()
     print('\nGetting Mountain URLS')
-    mountains_urls = get_mountains_urls(urls_filename = '100_mountains_urls.pickle', url = 'https://www.mountain-forecast.com/countries/UnitedStates?top100=yes')
+    mountains_urls = get_mountains_urls(urls_filename = '100_mountains_urls.pickle', url = 'https://www.mountain-forecast.com/countries/United-States?top100=yes')
     print('URLs for {} Mountains collected\n'.format(len(mountains_urls)))
 
     print('Scraping forecasts...\n')

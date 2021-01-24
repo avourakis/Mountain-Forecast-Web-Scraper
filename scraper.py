@@ -40,7 +40,7 @@ def get_urls_by_elevation(url):
     page = requests.get(full_url)
     soup = bs(page.content, 'html.parser')
 
-    elevation_items = soup.find('ul', attrs={'class':'b-elevation__container'}).find_all('a', attrs={'class':'js-elevation-link'})
+    elevation_items = soup.find('ul', attrs={'class':'b-elevation__list'}).find_all('a', attrs={'class':'js-elevation-link'})
     
     return [urljoin(base_url, item['href']) for item in elevation_items]
 
@@ -138,7 +138,7 @@ def scrape(mountains_urls):
             for i, day in enumerate(days):
                 current_day = clean(day.get_text())
                 elevation = url.rsplit('/', 1)[-1]
-                num_cols = int(day['data-columns'])
+                num_cols = int(day['colspan'])
 
                 if current_day != '': # What if day is empty in the middle? Does it affect the count?
 
@@ -171,8 +171,7 @@ def scrape_forecasts():
 
     start = time.time()
     print('\nGetting Mountain URLS')
-    #mountains_urls = get_mountains_urls(urls_filename = '10_mountains_urls.pickle', url = 'https://www.mountain-forecast.com/countries/United-States')
-    mountains_urls = get_mountains_urls(urls_filename = '100_mountains_urls.pickle')
+    mountains_urls = get_mountains_urls(urls_filename = '100_mountains_urls.pickle', url = 'https://www.mountain-forecast.com/countries/UnitedStates?top100=yes')
     print('URLs for {} Mountains collected\n'.format(len(mountains_urls)))
 
     print('Scraping forecasts...\n')
